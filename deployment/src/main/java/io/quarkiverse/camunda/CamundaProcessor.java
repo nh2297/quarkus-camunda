@@ -371,6 +371,7 @@ public class CamundaProcessor {
         NativeImageConfigBuildItem.Builder builder = NativeImageConfigBuildItem.builder();
         builder.addRuntimeInitializedClass("io.netty.handler.ssl.OpenSsl");
         builder.addRuntimeInitializedClass("io.netty.internal.tcnative.SSL");
+        builder.addRuntimeInitializedClass("io.netty.handler.ssl.OpenSslPrivateKeyMethod");
         builder.addRuntimeInitializedClass("io.netty.handler.ssl.OpenSslAsyncPrivateKeyMethod");
         builder.addRuntimeInitializedClass("io.netty.internal.tcnative.SSLPrivateKeyMethod");
         builder.addRuntimeInitializedClass("io.camunda.client.impl.worker.ExponentialBackoff");
