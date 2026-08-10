@@ -4,8 +4,6 @@ import static io.quarkiverse.camunda.devservices.CamundaDevServiceProcessor.DEV_
 import static io.quarkiverse.camunda.testcontainer.CamundaContainer.H2Configuration.DATABASE_PASSWORD;
 import static io.quarkiverse.camunda.testcontainer.CamundaContainer.H2Configuration.DATABASE_TYPE;
 import static io.quarkiverse.camunda.testcontainer.CamundaContainer.H2Configuration.DATABASE_USERNAME;
-import static io.quarkiverse.camunda.testcontainer.CamundaContainer.H2Configuration.LOGGING_LEVEL_IO_CAMUNDA_DB_RDBMS;
-import static io.quarkiverse.camunda.testcontainer.CamundaContainer.H2Configuration.LOGGING_LEVEL_ORG_MYBATIS;
 import static io.quarkiverse.camunda.testcontainer.CamundaContainer.H2Configuration.ZEEBE_BROKER_EXPORTERS_RDBMS_ARGS_DEFAULT_HISTORY_TTL;
 import static io.quarkiverse.camunda.testcontainer.CamundaContainer.H2Configuration.ZEEBE_BROKER_EXPORTERS_RDBMS_ARGS_FLUSH_INTERVAL;
 import static io.quarkiverse.camunda.testcontainer.CamundaContainer.H2Configuration.ZEEBE_BROKER_EXPORTERS_RDBMS_ARGS_MAX_HISTORY_CLEANUP_INTERVAL;
@@ -38,6 +36,7 @@ import org.testcontainers.containers.wait.strategy.WaitAllStrategy;
 import org.testcontainers.containers.wait.strategy.WaitAllStrategy.Mode;
 import org.testcontainers.utility.DockerImageName;
 
+import io.quarkiverse.camunda.devservices.CamundaDevServiceProcessor;
 import io.quarkus.devservices.common.ConfigureUtil;
 
 public class CamundaContainer extends GenericContainer<CamundaContainer> {
@@ -55,15 +54,24 @@ public class CamundaContainer extends GenericContainer<CamundaContainer> {
     private static final String CAMUNDA_EXPORTER_CLASSNAME = "io.camunda.exporter.CamundaExporter";
     private static final String CAMUNDA_EXPORTER_BULK_SIZE = "1";
 
+    private final LogLevel CAMUNDA_LOG_LEVEL;
+    private final LogLevel ZEEBE_LOG_LEVEL;
+    private final LogLevel LOGGING_LEVEL_IO_CAMUNDA_DB_RDBMS;
+    private final LogLevel LOGGING_LEVEL_ORG_MYBATIS;
     private final boolean useSharedNetwork;
     private String hostName;
 
-    public CamundaContainer(final DockerImageName dockerImageName, String serviceName, boolean useSharedNetwork) {
+    public CamundaContainer(final DockerImageName dockerImageName, String serviceName, boolean useSharedNetwork,
+            CamundaDevServiceProcessor.CamundaDevServiceLogLevel camundaLogLevels) {
         super(dockerImageName);
 
         log.debugf("Camunda broker docker image %s", dockerImageName);
 
         this.useSharedNetwork = useSharedNetwork;
+        this.CAMUNDA_LOG_LEVEL = camundaLogLevels.camundaLogLevel;
+        this.ZEEBE_LOG_LEVEL = camundaLogLevels.zeebeLogLevel;
+        this.LOGGING_LEVEL_IO_CAMUNDA_DB_RDBMS = camundaLogLevels.camundaDbRdbmsLogLevel;
+        this.LOGGING_LEVEL_ORG_MYBATIS = camundaLogLevels.myBatisLogLevel;
 
         applyDefaultConfiguration();
 
@@ -81,6 +89,7 @@ public class CamundaContainer extends GenericContainer<CamundaContainer> {
 
     private void applyDefaultConfiguration() {
         waitingFor(newDefaultWaitStrategy())
+                .withH2()
                 .withEnv(CamundaContainerRuntimeEnvs.CAMUNDA_ENV_SPRING_PROFILES_ACTIVE, ACTIVE_SPRING_PROFILES)
                 .withEnv(CamundaContainerRuntimeEnvs.CAMUNDA_ENV_ZEEBE_CLOCK_CONTROLLED, "true")
                 //                .withEnv(ContainerRuntimeEnvs.CAMUNDA_ENV_ZEEBE_LOG_APPENDER, LOG_APPENDER_STACKDRIVER)
@@ -88,7 +97,8 @@ public class CamundaContainer extends GenericContainer<CamundaContainer> {
                         CamundaContainerRuntimeEnvs.CAMUNDA_ENV_CAMUNDA_SECURITY_AUTHENTICATION_UNPROTECTED_API,
                         "true")
                 .withEnv(CamundaContainerRuntimeEnvs.CAMUNDA_ENV_CAMUNDA_SECURITY_AUTHORIZATIONS_ENABLED, "false")
-                .withH2()
+                .withEnv(CamundaContainerRuntimeEnvs.CAMUNDA_LOG_LEVEL, CAMUNDA_LOG_LEVEL.toString())
+                .withEnv(CamundaContainerRuntimeEnvs.ZEEBE_LOG_LEVEL, ZEEBE_LOG_LEVEL.toString())
                 .addExposedPorts(
                         CamundaContainerRuntimePorts.CAMUNDA_GATEWAY_API,
                         CamundaContainerRuntimePorts.CAMUNDA_COMMAND_API,
@@ -100,45 +110,6 @@ public class CamundaContainer extends GenericContainer<CamundaContainer> {
     String getExternalAddress(final int port) {
         return getHost() + ":" + getMappedPort(port);
     }
-
-    //    public CamundaContainer withMultiTenancy() {
-    //        withEnv(
-    //                ContainerRuntimeEnvs.CAMUNDA_ENV_MULTITENANCY_ENABLED,
-    //                MultiTenancyConfiguration.MULTITENANCY_ENABLED)
-    //                .withEnv(
-    //                        ContainerRuntimeEnvs.CAMUNDA_ENV_ZEEBE_GATEWAY_SECURITY_AUTHENTICATION_MODE,
-    //                        MultiTenancyConfiguration.ZEEBE_GATEWAY_SECURITY_AUTHENTICATION_MODE)
-    //                .withEnv(
-    //                        ContainerRuntimeEnvs.CAMUNDA_ENV_CAMUNDA_SECURITY_MULTITENANCY_CHECKS_ENABLED,
-    //                        MultiTenancyConfiguration.CAMUNDA_SECURITY_MULTITENANCY_CHECKS_ENABLED)
-    //                .withEnv(
-    //                        ContainerRuntimeEnvs.CAMUNDA_ENV_CAMUNDA_SECURITY_MULTITENANCY_API_ENABLED,
-    //                        MultiTenancyConfiguration.CAMUNDA_SECURITY_MULTITENANCY_API_ENABLED)
-    //                .withEnv(
-    //                        ContainerRuntimeEnvs.CAMUNDA_ENV_CAMUNDA_SECURITY_AUTHORIZATIONS_ENABLED,
-    //                        MultiTenancyConfiguration.CAMUNDA_SECURITY_AUTHORIZATIONS_ENABLED)
-    //                .withEnv(
-    //                        ContainerRuntimeEnvs.CAMUNDA_ENV_CAMUNDA_SECURITY_AUTHENTICATION_UNPROTECTED_API,
-    //                        MultiTenancyConfiguration.CAMUNDA_SECURITY_AUTHENTICATION_UNPROTECTEDAPI)
-    //                .withEnv(
-    //                        ContainerRuntimeEnvs.CAMUNDA_ENV_MULTITENANCY_USER_NAME,
-    //                        MultiTenancyConfiguration.MULTITENANCY_USER_NAME)
-    //                .withEnv(
-    //                        ContainerRuntimeEnvs.CAMUNDA_ENV_MULTITENANCY_USER_EMAIL,
-    //                        MultiTenancyConfiguration.MULTITENANCY_USER_EMAIL)
-    //                .withEnv(
-    //                        ContainerRuntimeEnvs.CAMUNDA_ENV_MULTITENANCY_USER_USERNAME,
-    //                        MultiTenancyConfiguration.MULTITENANCY_USER_USERNAME)
-    //                .withEnv(
-    //                        ContainerRuntimeEnvs.CAMUNDA_ENV_MULTITENANCY_USER_PASSWORD,
-    //                        MultiTenancyConfiguration.MULTITENANCY_USER_PASSWORD)
-    //                .withEnv(
-    //                        ContainerRuntimeEnvs.CAMUNDA_ENV_MULTITENANCY_USER_ADMIN_ROLE,
-    //                        MultiTenancyConfiguration.MULTITENANCY_USER_ADMIN_ROLE)
-    //                .waitingFor(newBasicAuthWaitStrategy());
-    //
-    //        return this;
-    //    }
 
     public CamundaContainer withH2() {
         withEnv(CAMUNDA_ENV_DATABASE_TYPE, DATABASE_TYPE)
@@ -161,8 +132,8 @@ public class CamundaContainer extends GenericContainer<CamundaContainer> {
                 .withEnv(
                         CAMUNDA_ENV_ZEEBE_BROKER_EXPORTERS_RDBMS_ARGS_MAX_HISTORY_CLEANUP_INTERVAL,
                         ZEEBE_BROKER_EXPORTERS_RDBMS_ARGS_MAX_HISTORY_CLEANUP_INTERVAL)
-                .withEnv(CAMUNDA_ENV_LOGGING_LEVEL_IO_CAMUNDA_DB_RDBMS, LOGGING_LEVEL_IO_CAMUNDA_DB_RDBMS)
-                .withEnv(CAMUNDA_ENV_LOGGING_LEVEL_ORG_MYBATIS, LOGGING_LEVEL_ORG_MYBATIS);
+                .withEnv(CAMUNDA_ENV_LOGGING_LEVEL_IO_CAMUNDA_DB_RDBMS, LOGGING_LEVEL_IO_CAMUNDA_DB_RDBMS.toString())
+                .withEnv(CAMUNDA_ENV_LOGGING_LEVEL_ORG_MYBATIS, LOGGING_LEVEL_ORG_MYBATIS.toString());
 
         return this;
     }
@@ -183,13 +154,6 @@ public class CamundaContainer extends GenericContainer<CamundaContainer> {
         return this;
     }
 
-    //    public static HttpWaitStrategy newBasicAuthBrokerReadyCheck() {
-    //        return newDefaultBrokerReadyCheck()
-    //                .withBasicCredentials(
-    //                        MultiTenancyConfiguration.MULTITENANCY_USER_USERNAME,
-    //                        MultiTenancyConfiguration.MULTITENANCY_USER_PASSWORD);
-    //    }
-
     public static HttpWaitStrategy newDefaultBrokerReadyCheck() {
         return new HttpWaitStrategy()
                 .forPath(READY_ENDPOINT)
@@ -197,13 +161,6 @@ public class CamundaContainer extends GenericContainer<CamundaContainer> {
                 .forStatusCodeMatching(status -> status >= 200 && status < 300)
                 .withReadTimeout(DEFAULT_READINESS_TIMEOUT);
     }
-
-    //    public static HttpWaitStrategy newBasicAuthTopologyReadyCheck() {
-    //        return newDefaultTopologyReadyCheck()
-    //                .withBasicCredentials(
-    //                        MultiTenancyConfiguration.MULTITENANCY_USER_USERNAME,
-    //                        MultiTenancyConfiguration.MULTITENANCY_USER_PASSWORD);
-    //    }
 
     public static HttpWaitStrategy newDefaultTopologyReadyCheck() {
         return new HttpWaitStrategy()
@@ -226,13 +183,6 @@ public class CamundaContainer extends GenericContainer<CamundaContainer> {
                 .withStrategy(newDefaultTopologyReadyCheck())
                 .withStartupTimeout(DEFAULT_STARTUP_TIMEOUT);
     }
-
-    //    private WaitAllStrategy newBasicAuthWaitStrategy() {
-    //        return new WaitAllStrategy(Mode.WITH_OUTER_TIMEOUT)
-    //                .withStrategy(newBasicAuthBrokerReadyCheck())
-    //                .withStrategy(newBasicAuthTopologyReadyCheck())
-    //                .withStartupTimeout(DEFAULT_STARTUP_TIMEOUT);
-    //    }
 
     public int getGrpcApiPort() {
         return getMappedPort(CamundaContainerRuntimePorts.CAMUNDA_GATEWAY_API);
@@ -298,42 +248,9 @@ public class CamundaContainer extends GenericContainer<CamundaContainer> {
         public static final String ZEEBE_BROKER_EXPORTERS_RDBMS_ARGS_DEFAULT_HISTORY_TTL = "PT2S";
         public static final String ZEEBE_BROKER_EXPORTERS_RDBMS_ARGS_MIN_HISTORY_CLEANUP_INTERVAL = "PT2S";
         public static final String ZEEBE_BROKER_EXPORTERS_RDBMS_ARGS_MAX_HISTORY_CLEANUP_INTERVAL = "PT5S";
-        public static final String LOGGING_LEVEL_IO_CAMUNDA_DB_RDBMS = "DEBUG";
-        public static final String LOGGING_LEVEL_ORG_MYBATIS = "DEBUG";
 
         public static String databaseUrL(final UUID uuid) {
             return "jdbc:h2:mem:cpt+" + uuid + ";DB_CLOSE_DELAY=-1;MODE=PostgreSQL";
         }
     }
-    //
-    //    /**
-    //     * Contains all configuration values required for running a self-managed, multitenancy-enabled
-    //     * Camunda test runtime.
-    //     */
-    //    public static class MultiTenancyConfiguration {
-    //        public static final String MULTITENANCY_ENABLED = "true";
-    //        public static final String ZEEBE_GATEWAY_SECURITY_AUTHENTICATION_MODE = "basic";
-    //        public static final String CAMUNDA_SECURITY_MULTITENANCY_CHECKS_ENABLED = "true";
-    //        public static final String CAMUNDA_SECURITY_MULTITENANCY_API_ENABLED = "true";
-    //        public static final String CAMUNDA_SECURITY_AUTHENTICATION_UNPROTECTEDAPI = "false";
-    //        public static final String CAMUNDA_SECURITY_AUTHORIZATIONS_ENABLED = "true";
-    //        /*
-    //         * Although the {@see io.camunda.security.api.model.config.initialization.InitializationConfiguration} creates a
-    //         * demo user by default, the user is explicity defined here in case the demo user, for whatever
-    //         * reason, should change in the future.
-    //         */
-    //        public static final String MULTITENANCY_USER_NAME = "demo";
-    //        public static final String MULTITENANCY_USER_EMAIL = "demo@example.com";
-    //        public static final String MULTITENANCY_USER_USERNAME = "demo";
-    //        public static final String MULTITENANCY_USER_PASSWORD = "demo";
-    //        public static final String MULTITENANCY_USER_ADMIN_ROLE = "demo";
-    //
-    //        public static String getBasicAuthCredentials() {
-    //            final String basicAuthString =
-    //                    String.format("%s:%s", MULTITENANCY_USER_USERNAME, MULTITENANCY_USER_PASSWORD);
-    //
-    //            return new String(
-    //                    Base64.getEncoder().encode(basicAuthString.getBytes(StandardCharsets.UTF_8)));
-    //        }
-    //    }
 }

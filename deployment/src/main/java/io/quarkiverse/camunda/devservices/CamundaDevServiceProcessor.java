@@ -20,6 +20,7 @@ import org.testcontainers.utility.DockerImageName;
 import io.camunda.client.CamundaClient;
 import io.quarkiverse.camunda.CamundaDevServiceBuildTimeConfig;
 import io.quarkiverse.camunda.testcontainer.CamundaContainer;
+import io.quarkiverse.camunda.testcontainer.LogLevel;
 import io.quarkus.deployment.IsProduction;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.builditem.CuratedApplicationShutdownBuildItem;
@@ -177,7 +178,8 @@ public class CamundaDevServiceProcessor {
             CamundaContainer container = new CamundaContainer(
                     image,
                     launchMode.getLaunchMode() == DEVELOPMENT ? config.serviceName : null,
-                    useSharedNetwork);
+                    useSharedNetwork,
+                    config.logLevel);
             timeout.ifPresent(container::withStartupTimeout);
 
             // enable test-container reuse
@@ -247,8 +249,8 @@ public class CamundaDevServiceProcessor {
         private final String imageName;
         private final boolean shared;
         private final String serviceName;
-
         private final boolean reuse;
+        private final CamundaDevServiceLogLevel logLevel;
 
         public CamundaDevServiceCfg(CamundaDevServicesConfig config) {
             this.devServicesEnabled = config.enabled();
@@ -256,6 +258,7 @@ public class CamundaDevServiceProcessor {
             this.shared = config.shared();
             this.serviceName = config.serviceName();
             this.reuse = config.reuse();
+            this.logLevel = new CamundaDevServiceLogLevel(config.log());
         }
 
         @Override
@@ -276,4 +279,18 @@ public class CamundaDevServiceProcessor {
         }
     }
 
+    public static final class CamundaDevServiceLogLevel {
+        public final LogLevel camundaLogLevel;
+        public final LogLevel zeebeLogLevel;
+        public final LogLevel camundaDbRdbmsLogLevel;
+        public final LogLevel myBatisLogLevel;
+
+        public CamundaDevServiceLogLevel(CamundaDevServicesConfig.CamundaDevServicesLogLevel logging) {
+            this.camundaLogLevel = logging.camundaLogLevel();
+            this.zeebeLogLevel = logging.zeebeLogLevel();
+            this.camundaDbRdbmsLogLevel = logging.camundaDbRdbmsLogLevel();
+            this.myBatisLogLevel = logging.myBatisLogLevel();
+        }
+
+    }
 }
