@@ -107,7 +107,7 @@ endif::add-copy-button-to-config-props[]
 
 [.description]
 --
-Helper to define the stop strategy for containers created by DevServices. In particular, we don't want to actually stop the containers when they have been flagged for reuse, and when the Test-containers configuration has been explicitly set to allow container reuse. To enable reuse, ass `testcontainers.reuse.enable=true` in your `.testcontainers.properties` file, to be stored in your home.
+Helper to define the stop strategy for containers created by DevServices. In particular, we don't want to actually stop the containers when they have been flagged for reuse, and when the Test-containers configuration has been explicitly set to allow container reuse. To enable reuse, use `testcontainers.reuse.enable=true` in your `.testcontainers.properties` file, to be stored in your home.
 
 
 ifdef::add-copy-button-to-env-var[]
@@ -119,6 +119,90 @@ endif::add-copy-button-to-env-var[]
 --
 |boolean
 |`+++false+++`
+
+a|icon:lock[title=Fixed at build time] [[quarkus-camunda_quarkus-camunda-devservices-log-camunda]] [.property-path]##link:#quarkus-camunda_quarkus-camunda-devservices-log-camunda[`+++quarkus.camunda.devservices.log.camunda+++`]##
+ifdef::add-copy-button-to-config-props[]
+config_property_copy_button:+++quarkus.camunda.devservices.log.camunda+++[]
+endif::add-copy-button-to-config-props[]
+
+
+[.description]
+--
+General log level for the whole Camunda instance. This level can be overridden by more specialized logging properties
+
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_CAMUNDA_DEVSERVICES_LOG_CAMUNDA+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_CAMUNDA_DEVSERVICES_LOG_CAMUNDA+++`
+endif::add-copy-button-to-env-var[]
+--
+a|`info`, `warn`, `error`, `debug`, `trace`
+|`+++info+++`
+
+a|icon:lock[title=Fixed at build time] [[quarkus-camunda_quarkus-camunda-devservices-log-zeebe]] [.property-path]##link:#quarkus-camunda_quarkus-camunda-devservices-log-zeebe[`+++quarkus.camunda.devservices.log.zeebe+++`]##
+ifdef::add-copy-button-to-config-props[]
+config_property_copy_button:+++quarkus.camunda.devservices.log.zeebe+++[]
+endif::add-copy-button-to-config-props[]
+
+
+[.description]
+--
+Zeebe log level.
+
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_CAMUNDA_DEVSERVICES_LOG_ZEEBE+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_CAMUNDA_DEVSERVICES_LOG_ZEEBE+++`
+endif::add-copy-button-to-env-var[]
+--
+a|`info`, `warn`, `error`, `debug`, `trace`
+|`+++info+++`
+
+a|icon:lock[title=Fixed at build time] [[quarkus-camunda_quarkus-camunda-devservices-log-camunda-db-rdbms]] [.property-path]##link:#quarkus-camunda_quarkus-camunda-devservices-log-camunda-db-rdbms[`+++quarkus.camunda.devservices.log.camunda-db-rdbms+++`]##
+ifdef::add-copy-button-to-config-props[]
+config_property_copy_button:+++quarkus.camunda.devservices.log.camunda-db-rdbms+++[]
+endif::add-copy-button-to-config-props[]
+
+
+[.description]
+--
+Log level for the h2 database used in the devservices
+
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_CAMUNDA_DEVSERVICES_LOG_CAMUNDA_DB_RDBMS+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_CAMUNDA_DEVSERVICES_LOG_CAMUNDA_DB_RDBMS+++`
+endif::add-copy-button-to-env-var[]
+--
+a|`info`, `warn`, `error`, `debug`, `trace`
+|`+++info+++`
+
+a|icon:lock[title=Fixed at build time] [[quarkus-camunda_quarkus-camunda-devservices-log-org-mybatis]] [.property-path]##link:#quarkus-camunda_quarkus-camunda-devservices-log-org-mybatis[`+++quarkus.camunda.devservices.log.org-mybatis+++`]##
+ifdef::add-copy-button-to-config-props[]
+config_property_copy_button:+++quarkus.camunda.devservices.log.org-mybatis+++[]
+endif::add-copy-button-to-config-props[]
+
+
+[.description]
+--
+Log level for the h2 exporter from camunda
+
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_CAMUNDA_DEVSERVICES_LOG_ORG_MYBATIS+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_CAMUNDA_DEVSERVICES_LOG_ORG_MYBATIS+++`
+endif::add-copy-button-to-env-var[]
+--
+a|`info`, `warn`, `error`, `debug`, `trace`
+|`+++info+++`
 
 a|icon:lock[title=Fixed at build time] [[quarkus-camunda_quarkus-camunda-dev-mode-watch-bpmn-files]] [.property-path]##link:#quarkus-camunda_quarkus-camunda-dev-mode-watch-bpmn-files[`+++quarkus.camunda.dev-mode.watch-bpmn-files+++`]##
 ifdef::add-copy-button-to-config-props[]
