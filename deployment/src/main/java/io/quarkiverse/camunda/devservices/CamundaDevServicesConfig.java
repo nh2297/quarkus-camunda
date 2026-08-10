@@ -70,7 +70,6 @@ public interface CamundaDevServicesConfig {
 
     /**
      * Logging configuration for the camunda devservice
-     * Accepted Values: INFO, DEBUG, TRACE, WARN, ERROR
      */
     @WithName("log")
     CamundaDevServicesLogLevel log();
