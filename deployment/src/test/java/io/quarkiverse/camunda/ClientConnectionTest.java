@@ -9,12 +9,12 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.camunda.client.api.response.Topology;
 import io.quarkiverse.camunda.test.TestService;
-import io.quarkus.test.QuarkusUnitTest;
+import io.quarkus.test.QuarkusExtensionTest;
 
 public class ClientConnectionTest {
 
     @RegisterExtension
-    static final QuarkusUnitTest unitTest = new QuarkusUnitTest()
+    static final QuarkusExtensionTest unitTest = new QuarkusExtensionTest()
             .withApplicationRoot((jar) -> jar
                     .addAsResource("no-resources.properties", "application.properties")
                     .addClasses(TestService.class));
