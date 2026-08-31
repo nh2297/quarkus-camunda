@@ -11,12 +11,12 @@ import io.camunda.client.api.response.ProcessInstanceEvent;
 import io.quarkiverse.camunda.jobworker.Parameter;
 import io.quarkiverse.camunda.jobworker.TestJobWorker;
 import io.quarkiverse.camunda.test.TestService;
-import io.quarkus.test.QuarkusUnitTest;
+import io.quarkus.test.QuarkusExtensionTest;
 
 public class ProcessTest {
 
     @RegisterExtension
-    static final QuarkusUnitTest unitTest = new QuarkusUnitTest()
+    static final QuarkusExtensionTest unitTest = new QuarkusExtensionTest()
             .withApplicationRoot((jar) -> jar
                     .addAsResource("default.properties", "application.properties")
                     .addAsResource("bpmn/TestProcess.bpmn", "/bpmn/TestProcess.bpmn")
