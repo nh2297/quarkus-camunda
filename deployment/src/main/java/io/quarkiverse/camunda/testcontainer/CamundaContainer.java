@@ -35,11 +35,14 @@ import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
 import org.testcontainers.containers.wait.strategy.WaitAllStrategy;
 import org.testcontainers.containers.wait.strategy.WaitAllStrategy.Mode;
 import org.testcontainers.utility.DockerImageName;
+import org.testcontainers.utility.TestcontainersConfiguration;
 
 import io.quarkiverse.camunda.devservices.CamundaDevServiceProcessor;
+import io.quarkus.deployment.builditem.Startable;
 import io.quarkus.devservices.common.ConfigureUtil;
+import io.quarkus.runtime.LaunchMode;
 
-public class CamundaContainer extends GenericContainer<CamundaContainer> {
+public class CamundaContainer extends GenericContainer<CamundaContainer> implements Startable {
 
     private static final Duration DEFAULT_STARTUP_TIMEOUT = Duration.ofMinutes(1);
     private static final Duration DEFAULT_READINESS_TIMEOUT = Duration.ofSeconds(10);
@@ -61,7 +64,7 @@ public class CamundaContainer extends GenericContainer<CamundaContainer> {
     private final boolean useSharedNetwork;
     private String hostName;
 
-    public CamundaContainer(final DockerImageName dockerImageName, String serviceName, boolean useSharedNetwork,
+    public CamundaContainer(final DockerImageName dockerImageName, boolean useSharedNetwork,
             CamundaDevServiceProcessor.CamundaDevServiceLogLevel camundaLogLevels) {
         super(dockerImageName);
 
@@ -81,9 +84,34 @@ public class CamundaContainer extends GenericContainer<CamundaContainer> {
         } else {
             withNetwork(Network.SHARED);
         }
+    }
 
-        if (serviceName != null) {
-            withLabel(DEV_SERVICE_LABEL, serviceName);
+    /**
+     * Adds the label used by other applications to discover this container as a shared dev service.
+     * Only applied in dev mode.
+     */
+    public CamundaContainer withSharedServiceLabel(LaunchMode launchMode, String serviceName) {
+        return ConfigureUtil.configureSharedServiceLabel(this, launchMode, DEV_SERVICE_LABEL, serviceName);
+    }
+
+    @Override
+    public String getConnectionInfo() {
+        return getRestApiAddress().toString();
+    }
+
+    /**
+     * Containers flagged for reuse are kept running when the Testcontainers configuration allows reuse
+     * ({@literal testcontainers.reuse.enable=true} in {@literal ~/.testcontainers.properties}).
+     *
+     * @see <a href="https://www.testcontainers.org/features/reuse/">Reusable Containers</a>
+     */
+    @Override
+    public void close() {
+        if (TestcontainersConfiguration.getInstance().environmentSupportsReuse() && isShouldBeReused()) {
+            log.infof(
+                    "Dev Services for Camunda is no longer needed by this Quarkus instance, but is not shut down as 'testcontainers.reuse.enable' is enabled in your Testcontainers configuration file");
+        } else {
+            super.close();
         }
     }
 
