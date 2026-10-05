@@ -38,4 +38,9 @@ public class UpdateTimeoutJobCommandStep1Impl extends AbstractStep<UpdateTimeout
     public UpdateTimeoutJobCommandStep2 operationReference(long operationReference) {
         return this;
     }
+
+    @Override
+    public UpdateTimeoutJobCommandStep2 withJobLeaseToken(String jobLeaseToken) {
+        return this;
+    }
 }

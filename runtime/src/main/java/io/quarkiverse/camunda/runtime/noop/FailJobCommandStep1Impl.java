@@ -66,4 +66,9 @@ public class FailJobCommandStep1Impl extends AbstractStep<FailJobResponse>
     public FailJobCommandStep1 useGrpc() {
         return this;
     }
+
+    @Override
+    public FailJobCommandStep2 withJobLeaseToken(String jobLeaseToken) {
+        return this;
+    }
 }

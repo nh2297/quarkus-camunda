@@ -82,4 +82,9 @@ public class PublishMessageCommandStep1Impl extends AbstractStep<PublishMessageR
     public PublishMessageCommandStep1 useGrpc() {
         return this;
     }
+
+    @Override
+    public PublishMessageCommandStep3 businessId(String businessId) {
+        return this;
+    }
 }

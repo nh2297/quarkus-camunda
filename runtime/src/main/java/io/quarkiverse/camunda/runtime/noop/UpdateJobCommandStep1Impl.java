@@ -33,4 +33,14 @@ public class UpdateJobCommandStep1Impl extends AbstractStep<UpdateJobResponse>
     public UpdateJobCommandStep2 updateTimeout(Duration timeout) {
         return this;
     }
+
+    @Override
+    public UpdateJobCommandStep2 updatePriority(int priority) {
+        return this;
+    }
+
+    @Override
+    public UpdateJobCommandStep2 withJobLeaseToken(String jobLeaseToken) {
+        return this;
+    }
 }

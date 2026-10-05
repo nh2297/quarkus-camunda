@@ -10,11 +10,11 @@ import org.jboss.logging.Logger;
 import io.camunda.client.CamundaClient;
 import io.camunda.client.impl.CamundaObjectMapper;
 import io.camunda.process.test.api.CamundaProcessTestContext;
+import io.camunda.process.test.impl.assertions.CamundaDataSource;
 import io.camunda.process.test.impl.assertions.util.AwaitilityBehavior;
 import io.camunda.process.test.impl.client.CamundaManagementClient;
 import io.camunda.process.test.impl.extension.CamundaProcessTestContextImpl;
 import io.camunda.process.test.impl.extension.ConditionalBehaviorEngine;
-import io.camunda.zeebe.client.impl.ZeebeObjectMapper;
 import io.quarkus.test.common.DevServicesContext;
 import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
 
@@ -24,6 +24,7 @@ public class CamundaTestResource implements QuarkusTestResourceLifecycleManager,
     private CamundaClient camundaClient;
     private final List<AutoCloseable> createdClients = new ArrayList<>();
     private CamundaProcessTestContext camundaProcessTestContext;
+    private CamundaDataSource dataSource;
 
     @Override
     public Map<String, String> start() {
@@ -54,7 +55,8 @@ public class CamundaTestResource implements QuarkusTestResourceLifecycleManager,
             camundaProcessTestContext = createContext(URI.create(restAddress), URI.create(grpcAddress),
                     URI.create(monitoringAddress));
             camundaClient = camundaProcessTestContext.createClient();
-            CamundaAssertInitializer.initialize(camundaClient);
+            dataSource = new CamundaDataSource(camundaClient);
+            CamundaAssertInitializer.initialize(dataSource);
         }
     }
 
@@ -77,7 +79,7 @@ public class CamundaTestResource implements QuarkusTestResourceLifecycleManager,
                 CamundaManagementClient.createClient(monitoringAddress),
                 AwaitilityBehavior::new,
                 new CamundaObjectMapper(),
-                new ZeebeObjectMapper(),
-                new ConditionalBehaviorEngine());
+                new ConditionalBehaviorEngine(),
+                () -> dataSource);
     }
 }

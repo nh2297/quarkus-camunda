@@ -66,4 +66,9 @@ public class DeployResourceCommandStep1Impl extends AbstractStep<DeploymentEvent
     public DeployResourceCommandStep1 useGrpc() {
         return this;
     }
+
+    @Override
+    public DeployResourceCommandStep2 batch() {
+        return this;
+    }
 }

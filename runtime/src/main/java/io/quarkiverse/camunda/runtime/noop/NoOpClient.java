@@ -11,6 +11,7 @@ import io.camunda.client.api.command.AssignClientToTenantCommandStep1;
 import io.camunda.client.api.command.AssignGroupToTenantCommandStep1;
 import io.camunda.client.api.command.AssignMappingRuleToGroupStep1;
 import io.camunda.client.api.command.AssignMappingRuleToTenantCommandStep1;
+import io.camunda.client.api.command.AssignProcessInstanceBusinessIdCommandStep1;
 import io.camunda.client.api.command.AssignRoleToClientCommandStep1;
 import io.camunda.client.api.command.AssignRoleToGroupCommandStep1;
 import io.camunda.client.api.command.AssignRoleToMappingRuleCommandStep1;
@@ -25,6 +26,7 @@ import io.camunda.client.api.command.CancelProcessInstanceCommandStep1;
 import io.camunda.client.api.command.CompleteJobCommandStep1;
 import io.camunda.client.api.command.CompleteUserTaskCommandStep1;
 import io.camunda.client.api.command.CorrelateMessageCommandStep1;
+import io.camunda.client.api.command.CreateAgentInstanceCommandStep1;
 import io.camunda.client.api.command.CreateAuthorizationCommandStep1;
 import io.camunda.client.api.command.CreateBatchOperationCommandStep1;
 import io.camunda.client.api.command.CreateDocumentBatchCommandStep1;
@@ -57,6 +59,7 @@ import io.camunda.client.api.command.FailJobCommandStep1;
 import io.camunda.client.api.command.GloballyScopedClusterVariableCreationCommandStep1;
 import io.camunda.client.api.command.GloballyScopedClusterVariableDeletionCommandStep1;
 import io.camunda.client.api.command.GloballyScopedClusterVariableUpdateCommandStep1;
+import io.camunda.client.api.command.ListSecretsCommandStep1;
 import io.camunda.client.api.command.MigrateProcessInstanceCommandStep1;
 import io.camunda.client.api.command.ModifyProcessInstanceCommandStep1;
 import io.camunda.client.api.command.PinClockCommandStep1;
@@ -64,11 +67,14 @@ import io.camunda.client.api.command.PublishMessageCommandStep1;
 import io.camunda.client.api.command.ResetClockCommandStep1;
 import io.camunda.client.api.command.ResolveIncidentCommandStep1;
 import io.camunda.client.api.command.ResolveProcessInstanceIncidentsCommandStep1;
+import io.camunda.client.api.command.ResolveSecretsCommandStep1;
 import io.camunda.client.api.command.ResumeBatchOperationStep1;
+import io.camunda.client.api.command.ResumeProcessInstanceCommandStep1;
 import io.camunda.client.api.command.SetVariablesCommandStep1;
 import io.camunda.client.api.command.StatusRequestStep1;
 import io.camunda.client.api.command.StreamJobsCommandStep1;
 import io.camunda.client.api.command.SuspendBatchOperationStep1;
+import io.camunda.client.api.command.SuspendProcessInstanceCommandStep1;
 import io.camunda.client.api.command.TenantScopedClusterVariableCreationCommandStep1;
 import io.camunda.client.api.command.TenantScopedClusterVariableDeletionCommandStep1;
 import io.camunda.client.api.command.TenantScopedClusterVariableUpdateCommandStep1;
@@ -87,10 +93,12 @@ import io.camunda.client.api.command.UnassignRoleFromUserCommandStep1;
 import io.camunda.client.api.command.UnassignUserFromGroupCommandStep1;
 import io.camunda.client.api.command.UnassignUserFromTenantCommandStep1;
 import io.camunda.client.api.command.UnassignUserTaskCommandStep1;
+import io.camunda.client.api.command.UpdateAgentInstanceCommandStep1;
 import io.camunda.client.api.command.UpdateAuthorizationCommandStep1;
 import io.camunda.client.api.command.UpdateGlobalTaskListenerCommandStep1;
 import io.camunda.client.api.command.UpdateGroupCommandStep1;
 import io.camunda.client.api.command.UpdateJobCommandStep1;
+import io.camunda.client.api.command.UpdateJobPriorityCommandStep1;
 import io.camunda.client.api.command.UpdateMappingRuleCommandStep1;
 import io.camunda.client.api.command.UpdateRetriesJobCommandStep1;
 import io.camunda.client.api.command.UpdateRoleCommandStep1;
@@ -98,6 +106,8 @@ import io.camunda.client.api.command.UpdateTenantCommandStep1;
 import io.camunda.client.api.command.UpdateTimeoutJobCommandStep1;
 import io.camunda.client.api.command.UpdateUserCommandStep1;
 import io.camunda.client.api.command.UpdateUserTaskCommandStep1;
+import io.camunda.client.api.fetch.AgentDefinitionGetRequest;
+import io.camunda.client.api.fetch.AgentInstanceGetRequest;
 import io.camunda.client.api.fetch.AuditLogGetRequest;
 import io.camunda.client.api.fetch.AuthorizationGetRequest;
 import io.camunda.client.api.fetch.AuthorizationsSearchRequest;
@@ -109,6 +119,7 @@ import io.camunda.client.api.fetch.DecisionRequirementsGetRequest;
 import io.camunda.client.api.fetch.DecisionRequirementsGetXmlRequest;
 import io.camunda.client.api.fetch.DocumentContentGetRequest;
 import io.camunda.client.api.fetch.ElementInstanceGetRequest;
+import io.camunda.client.api.fetch.FormGetRequest;
 import io.camunda.client.api.fetch.GlobalTaskListenerGetRequest;
 import io.camunda.client.api.fetch.GloballyScopedClusterVariableGetRequest;
 import io.camunda.client.api.fetch.GroupGetRequest;
@@ -131,6 +142,9 @@ import io.camunda.client.api.fetch.UserTaskGetRequest;
 import io.camunda.client.api.fetch.VariableGetRequest;
 import io.camunda.client.api.response.ActivatedJob;
 import io.camunda.client.api.response.DocumentReferenceResponse;
+import io.camunda.client.api.search.request.AgentDefinitionSearchRequest;
+import io.camunda.client.api.search.request.AgentInstanceHistorySearchRequest;
+import io.camunda.client.api.search.request.AgentInstanceSearchRequest;
 import io.camunda.client.api.search.request.AuditLogSearchRequest;
 import io.camunda.client.api.search.request.BatchOperationItemSearchRequest;
 import io.camunda.client.api.search.request.BatchOperationSearchRequest;
@@ -143,6 +157,7 @@ import io.camunda.client.api.search.request.DecisionDefinitionSearchRequest;
 import io.camunda.client.api.search.request.DecisionInstanceSearchRequest;
 import io.camunda.client.api.search.request.DecisionRequirementsSearchRequest;
 import io.camunda.client.api.search.request.ElementInstanceSearchRequest;
+import io.camunda.client.api.search.request.ElementInstanceWaitStateSearchRequest;
 import io.camunda.client.api.search.request.GlobalTaskListenerSearchRequest;
 import io.camunda.client.api.search.request.GroupsByRoleSearchRequest;
 import io.camunda.client.api.search.request.GroupsByTenantSearchRequest;
@@ -159,6 +174,7 @@ import io.camunda.client.api.search.request.MessageSubscriptionSearchRequest;
 import io.camunda.client.api.search.request.ProcessDefinitionSearchRequest;
 import io.camunda.client.api.search.request.ProcessInstanceSearchRequest;
 import io.camunda.client.api.search.request.ProcessInstanceSequenceFlowsRequest;
+import io.camunda.client.api.search.request.ResourceSearchRequest;
 import io.camunda.client.api.search.request.RolesByGroupSearchRequest;
 import io.camunda.client.api.search.request.RolesByTenantSearchRequest;
 import io.camunda.client.api.search.request.TenantsSearchRequest;
@@ -183,6 +199,7 @@ import io.camunda.client.api.statistics.request.ProcessDefinitionInstanceStatist
 import io.camunda.client.api.statistics.request.ProcessDefinitionInstanceVersionStatisticsRequest;
 import io.camunda.client.api.statistics.request.ProcessDefinitionMessageSubscriptionStatisticsRequest;
 import io.camunda.client.api.statistics.request.ProcessInstanceElementStatisticsRequest;
+import io.camunda.client.api.statistics.request.ProcessInstanceWaitStateStatisticsRequest;
 import io.camunda.client.api.statistics.request.UsageMetricsStatisticsRequest;
 import io.camunda.client.api.worker.JobWorkerBuilderStep1;
 import io.camunda.client.impl.CamundaClientBuilderImpl;
@@ -246,6 +263,21 @@ public class NoOpClient implements CamundaClient {
     }
 
     @Override
+    public SuspendProcessInstanceCommandStep1 newSuspendProcessInstanceCommand(long processInstanceKey) {
+        return new SuspendProcessInstanceCommand1Impl();
+    }
+
+    @Override
+    public ResumeProcessInstanceCommandStep1 newResumeProcessInstanceCommand(long processInstanceKey) {
+        return new ResumeProcessInstanceCommand1Impl();
+    }
+
+    @Override
+    public AssignProcessInstanceBusinessIdCommandStep1 newAssignProcessInstanceBusinessIdCommand(long processInstanceKey) {
+        return new AssignProcessInstanceBusinessIdCommand1Impl();
+    }
+
+    @Override
     public SetVariablesCommandStep1 newSetVariablesCommand(long elementInstanceKey) {
         return new SetVariablesCommandStep1Impl();
     }
@@ -298,6 +330,16 @@ public class NoOpClient implements CamundaClient {
     @Override
     public UpdateTimeoutJobCommandStep1 newUpdateTimeoutCommand(ActivatedJob job) {
         return new UpdateTimeoutJobCommandStep1Impl();
+    }
+
+    @Override
+    public UpdateJobPriorityCommandStep1 newUpdateJobPriorityCommand(long jobKey) {
+        return new UpdateJobPriorityCommandStep1Impl();
+    }
+
+    @Override
+    public UpdateJobPriorityCommandStep1 newUpdateJobPriorityCommand(ActivatedJob job) {
+        return new UpdateJobPriorityCommandStep1Impl();
     }
 
     @Override
@@ -366,6 +408,11 @@ public class NoOpClient implements CamundaClient {
     }
 
     @Override
+    public FormGetRequest newFormGetRequest(long formKey) {
+        return new FormGetRequest1Impl();
+    }
+
+    @Override
     public ProcessDefinitionSearchRequest newProcessDefinitionSearchRequest() {
         return new ProcessDefinitionSearchRequest1Impl();
     }
@@ -378,6 +425,11 @@ public class NoOpClient implements CamundaClient {
     @Override
     public ProcessInstanceElementStatisticsRequest newProcessInstanceElementStatisticsRequest(long processInstanceKey) {
         return new ProcessInstanceElementStatisticsRequest1Impl();
+    }
+
+    @Override
+    public ProcessInstanceWaitStateStatisticsRequest newProcessInstanceWaitStateStatisticsRequest(long processInstanceKey) {
+        return new ProcessInstanceWaitStateStatisticsRequest1Impl();
     }
 
     @Override
@@ -434,6 +486,11 @@ public class NoOpClient implements CamundaClient {
     @Override
     public ElementInstanceSearchRequest newElementInstanceSearchRequest() {
         return new ElementInstanceSearchRequest1Impl();
+    }
+
+    @Override
+    public ElementInstanceWaitStateSearchRequest newElementInstanceWaitStateSearchRequest() {
+        return new ElementInstanceWaitStateSearchRequest1Impl();
     }
 
     @Override
@@ -888,6 +945,11 @@ public class NoOpClient implements CamundaClient {
     }
 
     @Override
+    public AuthorizationsSearchRequest newOwnAuthorizationSearchRequest() {
+        return new AuthorizationsSearchRequest1Impl();
+    }
+
+    @Override
     public DeleteAuthorizationCommandStep1 newDeleteAuthorizationCommand(long authorizationKey) {
         return new DeleteAuthorizationCommand1Impl();
     }
@@ -1075,8 +1137,19 @@ public class NoOpClient implements CamundaClient {
     }
 
     @Override
+    @Deprecated
     public ResourceContentGetRequest newResourceContentGetRequest(long resourceKey) {
         return new ResourceContentGetRequest1Impl();
+    }
+
+    @Override
+    public ResourceContentGetRequest newResourceContentBinaryGetRequest(long resourceKey) {
+        return new ResourceContentGetRequest1Impl();
+    }
+
+    @Override
+    public ResourceSearchRequest newResourceSearchRequest() {
+        return new ResourceSearchRequest1Impl();
     }
 
     @Override
@@ -1142,6 +1215,51 @@ public class NoOpClient implements CamundaClient {
     @Override
     public StreamJobsCommandStep1 newStreamJobsCommand() {
         return new StreamJobsCommandStep1Impl();
+    }
+
+    @Override
+    public CreateAgentInstanceCommandStep1 newCreateAgentInstanceCommand() {
+        return new CreateAgentInstanceCommand1Impl();
+    }
+
+    @Override
+    public UpdateAgentInstanceCommandStep1 newUpdateAgentInstanceCommand(long agentInstanceKey) {
+        return new UpdateAgentInstanceCommand1Impl();
+    }
+
+    @Override
+    public AgentInstanceGetRequest newAgentInstanceGetRequest(long agentInstanceKey) {
+        return new AgentInstanceGetRequest1Impl();
+    }
+
+    @Override
+    public AgentInstanceSearchRequest newAgentInstanceSearchRequest() {
+        return new AgentInstanceSearchRequest1Impl();
+    }
+
+    @Override
+    public AgentInstanceHistorySearchRequest newAgentInstanceHistorySearchRequest(long agentInstanceKey) {
+        return new AgentInstanceHistorySearchRequest1Impl();
+    }
+
+    @Override
+    public AgentDefinitionGetRequest newAgentDefinitionGetRequest(long agentDefinitionKey) {
+        return new AgentDefinitionGetRequest1Impl();
+    }
+
+    @Override
+    public AgentDefinitionSearchRequest newAgentDefinitionSearchRequest() {
+        return new AgentDefinitionSearchRequest1Impl();
+    }
+
+    @Override
+    public ListSecretsCommandStep1 newListSecretsCommand() {
+        return new ListSecretsCommand1Impl();
+    }
+
+    @Override
+    public ResolveSecretsCommandStep1 newResolveSecretsCommand() {
+        return new ResolveSecretsCommand1Impl();
     }
 
 }

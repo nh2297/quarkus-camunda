@@ -68,4 +68,8 @@ public class StreamJobsCommandStep1Impl extends AbstractStep<StreamJobsResponse>
         return new StreamJobsResponseImpl();
     }
 
+    @Override
+    public StreamJobsCommandStep3 withLease(boolean withLease) {
+        return this;
+    }
 }

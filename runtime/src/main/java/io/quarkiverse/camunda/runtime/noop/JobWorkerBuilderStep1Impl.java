@@ -133,4 +133,13 @@ public class JobWorkerBuilderStep1Impl implements JobWorkerBuilderStep1, JobWork
         return this;
     }
 
+    @Override
+    public JobWorkerBuilderStep3 streamInactivityTimeout(Duration streamInactivityTimeout) {
+        return this;
+    }
+
+    @Override
+    public JobWorkerBuilderStep3 withLease(boolean withLease) {
+        return this;
+    }
 }
