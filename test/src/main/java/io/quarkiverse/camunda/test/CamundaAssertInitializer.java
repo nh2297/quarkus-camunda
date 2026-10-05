@@ -22,8 +22,8 @@ final class CamundaAssertInitializer {
     private CamundaAssertInitializer() {
     }
 
-    static void initialize(CamundaClient client) {
-        invoke(INITIALIZE, new CamundaDataSource(client));
+    static void initialize(CamundaDataSource dataSource) {
+        invoke(INITIALIZE, dataSource);
     }
 
     static void reset() {

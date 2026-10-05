@@ -75,4 +75,9 @@ public class ActivateJobsCommandStep1Impl extends AbstractStep<ActivateJobsRespo
     public ActivateJobsCommandStep1 useGrpc() {
         return this;
     }
+
+    @Override
+    public ActivateJobsCommandStep3 withLease(boolean withLease) {
+        return this;
+    }
 }

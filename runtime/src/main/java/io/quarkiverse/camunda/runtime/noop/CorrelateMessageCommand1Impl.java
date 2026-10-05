@@ -54,4 +54,9 @@ public class CorrelateMessageCommand1Impl extends AbstractStep<CorrelateMessageR
     public CorrelateMessageCommandStep3 tenantId(String tenantId) {
         return this;
     }
+
+    @Override
+    public CorrelateMessageCommandStep3 businessId(String businessId) {
+        return this;
+    }
 }

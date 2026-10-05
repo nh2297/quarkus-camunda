@@ -53,4 +53,9 @@ public class ThrowErrorCommandStep1Impl extends AbstractStep<ThrowErrorResponse>
     public ThrowErrorCommandStep1 useGrpc() {
         return this;
     }
+
+    @Override
+    public ThrowErrorCommandStep2 withJobLeaseToken(String jobLeaseToken) {
+        return this;
+    }
 }

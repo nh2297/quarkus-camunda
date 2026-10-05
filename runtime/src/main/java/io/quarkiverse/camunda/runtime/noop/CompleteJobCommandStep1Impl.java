@@ -56,4 +56,14 @@ public class CompleteJobCommandStep1Impl extends AbstractStep<CompleteJobRespons
     public CompleteJobCommandStep1 useGrpc() {
         return this;
     }
+
+    @Override
+    public CompleteJobCommandStep1 withBusinessId(String businessId) {
+        return this;
+    }
+
+    @Override
+    public CompleteJobCommandStep1 withJobLeaseToken(String jobLeaseToken) {
+        return this;
+    }
 }

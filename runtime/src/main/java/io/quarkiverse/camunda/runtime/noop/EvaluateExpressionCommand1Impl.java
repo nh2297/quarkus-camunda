@@ -42,4 +42,9 @@ public class EvaluateExpressionCommand1Impl extends AbstractStep<EvaluateExpress
     public EvaluateExpressionCommandStep2 tenantId(String tenantId) {
         return this;
     }
+
+    @Override
+    public EvaluateExpressionCommandStep2 scopeKey(long scopeKey) {
+        return this;
+    }
 }

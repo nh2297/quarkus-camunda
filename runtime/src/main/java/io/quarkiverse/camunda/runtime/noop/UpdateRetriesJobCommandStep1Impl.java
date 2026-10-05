@@ -31,4 +31,9 @@ public class UpdateRetriesJobCommandStep1Impl extends AbstractStep<UpdateRetries
     public UpdateRetriesJobCommandStep2 operationReference(long operationReference) {
         return this;
     }
+
+    @Override
+    public UpdateRetriesJobCommandStep2 withJobLeaseToken(String jobLeaseToken) {
+        return this;
+    }
 }
