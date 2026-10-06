@@ -2,17 +2,15 @@ package io.quarkiverse.camunda.devservices;
 
 import static io.quarkiverse.camunda.CamundaProcessor.FEATURE_NAME;
 import static io.quarkiverse.camunda.testcontainer.CamundaContainerRuntimePorts.CAMUNDA_REST_API;
-import static io.quarkus.runtime.LaunchMode.DEVELOPMENT;
+import static io.quarkus.devservices.common.ContainerLocator.locateContainerWithLabels;
 
-import java.io.Closeable;
 import java.net.URI;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Supplier;
+import java.util.function.Function;
 
 import org.jboss.logging.Logger;
 import org.testcontainers.utility.DockerImageName;
@@ -21,21 +19,19 @@ import io.camunda.client.CamundaClient;
 import io.quarkiverse.camunda.CamundaDevServiceBuildTimeConfig;
 import io.quarkiverse.camunda.testcontainer.CamundaContainer;
 import io.quarkiverse.camunda.testcontainer.LogLevel;
-import io.quarkus.deployment.IsProduction;
+import io.quarkus.deployment.IsDevServicesSupportedByLaunchMode;
 import io.quarkus.deployment.annotations.BuildStep;
-import io.quarkus.deployment.builditem.CuratedApplicationShutdownBuildItem;
+import io.quarkus.deployment.annotations.BuildSteps;
 import io.quarkus.deployment.builditem.DevServicesResultBuildItem;
-import io.quarkus.deployment.builditem.DevServicesResultBuildItem.RunningDevService;
 import io.quarkus.deployment.builditem.DevServicesSharedNetworkBuildItem;
 import io.quarkus.deployment.builditem.DockerStatusBuildItem;
 import io.quarkus.deployment.builditem.LaunchModeBuildItem;
-import io.quarkus.deployment.console.ConsoleInstalledBuildItem;
-import io.quarkus.deployment.console.StartupLogCompressor;
-import io.quarkus.deployment.logging.LoggingSetupBuildItem;
-import io.quarkus.devservices.common.ContainerAddress;
+import io.quarkus.deployment.dev.devservices.DevServicesConfig;
 import io.quarkus.devservices.common.ContainerLocator;
+import io.quarkus.runtime.LaunchMode;
 import io.quarkus.runtime.configuration.ConfigUtils;
 
+@BuildSteps(onlyIf = { IsDevServicesSupportedByLaunchMode.class, DevServicesConfig.Enabled.class })
 public class CamundaDevServiceProcessor {
 
     private static final String DEFAULT_CAMUNDA_CONTAINER_IMAGE = "camunda/camunda";
@@ -46,170 +42,113 @@ public class CamundaDevServiceProcessor {
             .withTag(DEFAULT_CAMUNDA_VERSION);
 
     private static final Logger log = Logger.getLogger(CamundaDevServiceProcessor.class);
-    static final String PROP_CAMUNDA_GATEWAY_ADDRESS = "quarkus.camunda.client.broker.gateway-address";
-    static final String PROP_CAMUNDA_REST_ADDRESS = "quarkus.camunda.client.broker.rest-address";
+    private static final String PROP_CAMUNDA_GATEWAY_ADDRESS = "quarkus.camunda.client.broker.gateway-address";
+    private static final String PROP_CAMUNDA_REST_ADDRESS = "quarkus.camunda.client.broker.rest-address";
+    private static final String PROP_TEST_GATEWAY_ADDRESS = "quarkiverse.camunda.devservices.test.gateway-address";
+    private static final String PROP_TEST_REST_ADDRESS = "quarkiverse.camunda.devservices.test.rest-address";
+    private static final String PROP_TEST_MONITORING_ADDRESS = "quarkiverse.camunda.devservices.test.monitoring-address";
     public static final String DEV_SERVICE_LABEL = "quarkus-dev-service-camunda";
-    private static final ContainerLocator camundaContainerLocator = new ContainerLocator(DEV_SERVICE_LABEL, CAMUNDA_REST_API);
-    static volatile CamundaRunningDevService devService;
-    static volatile CamundaDevServiceCfg runningConfiguration;
-    static volatile boolean first = true;
+    private static final ContainerLocator camundaContainerLocator = locateContainerWithLabels(CAMUNDA_REST_API,
+            DEV_SERVICE_LABEL);
 
-    @BuildStep(onlyIfNot = IsProduction.class, onlyIf = {
-            io.quarkus.deployment.dev.devservices.DevServicesConfig.Enabled.class })
+    @BuildStep
     public DevServicesResultBuildItem startCamundaContainers(LaunchModeBuildItem launchMode,
             List<DevServicesSharedNetworkBuildItem> devServicesSharedNetworkBuildItem,
             CamundaDevServiceBuildTimeConfig buildTimeConfig,
-            Optional<ConsoleInstalledBuildItem> consoleInstalledBuildItem,
-            CuratedApplicationShutdownBuildItem closeBuildItem,
             DockerStatusBuildItem dockerStatusBuildItem,
-            LoggingSetupBuildItem loggingSetupBuildItem,
-            io.quarkus.deployment.dev.devservices.DevServicesConfig devServicesConfig) {
+            DevServicesConfig devServicesConfig) {
 
-        CamundaDevServiceCfg configuration = getConfiguration(buildTimeConfig);
-
-        if (devService != null) {
-            boolean shouldShutdownTheBroker = !configuration.equals(runningConfiguration);
-            if (!shouldShutdownTheBroker) {
-                return devService.toBuildItem();
-            }
-            shutdownCamunda();
-            runningConfiguration = null;
-        }
-
-        StartupLogCompressor compressor = new StartupLogCompressor(
-                (launchMode.isTest() ? "(test) " : "") + "Camunda Dev Services Starting:",
-                consoleInstalledBuildItem, loggingSetupBuildItem);
-        try {
-            boolean useSharedNetwork = DevServicesSharedNetworkBuildItem.isSharedNetworkRequired(devServicesConfig,
-                    devServicesSharedNetworkBuildItem);
-            devService = startCamunda(dockerStatusBuildItem, configuration, launchMode,
-                    useSharedNetwork,
-                    devServicesConfig.timeout());
-            if (devService == null) {
-                compressor.closeAndDumpCaptured();
-            } else {
-                compressor.close();
-            }
-        } catch (Throwable t) {
-            compressor.closeAndDumpCaptured();
-            throw new RuntimeException(t);
-        }
-
-        if (devService == null) {
+        CamundaDevServicesConfig config = buildTimeConfig.devService();
+        if (!devServicesRequired(dockerStatusBuildItem, config)) {
             return null;
         }
 
-        // Configure the watch dog
-        if (first) {
-            first = false;
-            Runnable closeTask = () -> {
-                if (devService != null) {
-                    shutdownCamunda();
-                }
-                first = true;
-                devService = null;
-                runningConfiguration = null;
-            };
-            closeBuildItem.addCloseTask(closeTask, true);
-        }
-        runningConfiguration = configuration;
-
-        if (devService.isOwner() && !ConfigUtils.isPropertyPresent(PROP_CAMUNDA_GATEWAY_ADDRESS)) {
-            String tmp = devService.getConfig().get(PROP_CAMUNDA_GATEWAY_ADDRESS);
-            log.infof("Camunda is ready to accept connections on %s",
-                    tmp);
+        boolean test = launchMode.isTest();
+        DevServicesResultBuildItem discovered = discoverRunningService(config, launchMode.getLaunchMode(), test);
+        if (discovered != null) {
+            return discovered;
         }
 
-        if (devService.isOwner() && !ConfigUtils.isPropertyPresent(PROP_CAMUNDA_REST_ADDRESS)) {
-            String tmp = devService.getConfig().get(PROP_CAMUNDA_REST_ADDRESS);
-            log.infof("Camunda is ready to accept connections on %s",
-                    tmp);
-        }
+        boolean useSharedNetwork = DevServicesSharedNetworkBuildItem.isSharedNetworkRequired(devServicesConfig,
+                devServicesSharedNetworkBuildItem);
+        Optional<Duration> timeout = devServicesConfig.timeout();
+        DockerImageName image = config.imageName().map(DockerImageName::parse).orElse(CAMUNDA_IMAGE_NAME);
 
-        return devService.toBuildItem();
+        return DevServicesResultBuildItem.owned()
+                .feature(FEATURE_NAME)
+                .serviceName(config.serviceName())
+                .serviceConfig(config)
+                .startable(() -> {
+                    CamundaContainer container = new CamundaContainer(image, useSharedNetwork,
+                            new CamundaDevServiceLogLevel(config.log()))
+                            .withSharedServiceLabel(launchMode.getLaunchMode(), config.serviceName());
+                    timeout.ifPresent(container::withStartupTimeout);
+                    if (config.reuse()) {
+                        container.withReuse(true);
+                    }
+                    return container;
+                })
+                .configProvider(configProvider(test))
+                .postStartHook(container -> log.infof("Camunda is ready to accept connections on %s (gRPC) and %s (REST)",
+                        container.getGrpcApiAddress(), container.getRestApiAddress()))
+                .build();
     }
 
-    public static class CamundaRunningDevService extends RunningDevService {
-
-        public CamundaRunningDevService(String name, String containerId, Closeable closeable, Map<String, String> config) {
-            super(name, containerId, closeable, config);
-        }
-    }
-
-    private CamundaRunningDevService startCamunda(DockerStatusBuildItem dockerStatusBuildItem,
-            CamundaDevServiceCfg config,
-            LaunchModeBuildItem launchMode, boolean useSharedNetwork, Optional<Duration> timeout) {
-
-        if (!config.devServicesEnabled) {
+    private static boolean devServicesRequired(DockerStatusBuildItem dockerStatusBuildItem, CamundaDevServicesConfig config) {
+        if (!config.enabled()) {
             // explicitly disabled
             log.debug("Not starting dev services for Camunda as it has been disabled in the config");
-            return null;
+            return false;
         }
 
         if (ConfigUtils.isPropertyPresent(PROP_CAMUNDA_GATEWAY_ADDRESS)) {
             log.debug("Not starting dev services for Camunda as '" + PROP_CAMUNDA_GATEWAY_ADDRESS + "' have been provided");
-            return null;
+            return false;
         }
 
         if (ConfigUtils.isPropertyPresent(PROP_CAMUNDA_REST_ADDRESS)) {
             log.debug("Not starting dev services for Camunda as '" + PROP_CAMUNDA_REST_ADDRESS + "' have been provided");
-            return null;
+            return false;
         }
 
         if (!dockerStatusBuildItem.isContainerRuntimeAvailable()) {
             log.warn(
                     "Docker isn't working, please configure the Camunda broker servers gateway property ("
                             + PROP_CAMUNDA_GATEWAY_ADDRESS + " OR " + PROP_CAMUNDA_REST_ADDRESS + ").");
-            return null;
+            return false;
         }
+        return true;
+    }
 
-        final Optional<ContainerAddress> maybeContainerAddress = camundaContainerLocator.locateContainer(config.serviceName,
-                config.shared,
-                launchMode.getLaunchMode());
-
-        // Starting the broker
-        final Supplier<CamundaRunningDevService> defaultCamundaBrokerSupplier = () -> {
-
-            DockerImageName image = CAMUNDA_IMAGE_NAME;
-            if (config.imageName != null) {
-                image = DockerImageName.parse(config.imageName);
-            }
-
-            CamundaContainer container = new CamundaContainer(
-                    image,
-                    launchMode.getLaunchMode() == DEVELOPMENT ? config.serviceName : null,
-                    useSharedNetwork,
-                    config.logLevel);
-            timeout.ifPresent(container::withStartupTimeout);
-
-            // enable test-container reuse
-            if (config.reuse) {
-                container.withReuse(true);
-            }
-
-            container.start();
-
-            // the application may itself run in a container (shared network) and needs the
-            // network-internal address, while the test resource always runs on the host JVM
-            // and needs the host-mapped one
-            return new CamundaRunningDevService(FEATURE_NAME,
-                    container.getContainerId(),
-                    new CamundaContainerShutdownCloseable(container, FEATURE_NAME),
-                    configMap(container.getGrpcApiAddress(), container.getRestApiAddress(),
-                            container.getExternalGrpcApiAddress(), container.getExternalRestApiAddress(),
-                            container.getMonitoringApiAddress(),
-                            launchMode.isTest()));
-        };
-
-        return maybeContainerAddress
+    private static DevServicesResultBuildItem discoverRunningService(CamundaDevServicesConfig config,
+            LaunchMode launchMode, boolean test) {
+        return camundaContainerLocator.locateContainer(config.serviceName(), config.shared(), launchMode)
                 .map(containerAddress -> {
                     URI url = URI.create(containerAddress.getUrl());
-                    return new CamundaRunningDevService(FEATURE_NAME,
-                            containerAddress.getId(),
-                            null,
-                            configMap(url, url, url, url, url, launchMode.isTest()));
+                    return DevServicesResultBuildItem.discovered()
+                            .feature(FEATURE_NAME)
+                            .containerId(containerAddress.getId())
+                            .config(configMap(url, url, url, url, url, test))
+                            .build();
                 })
-                .orElseGet(defaultCamundaBrokerSupplier);
+                .orElse(null);
+    }
+
+    /**
+     * The application may itself run in a container (shared network) and needs the network-internal address,
+     * while the test resource always runs on the host JVM and needs the host-mapped one.
+     */
+    private static Map<String, Function<CamundaContainer, String>> configProvider(boolean test) {
+        Map<String, Function<CamundaContainer, String>> config = new HashMap<>();
+        config.put(PROP_CAMUNDA_GATEWAY_ADDRESS, c -> c.getGrpcApiAddress().toString());
+        config.put(PROP_CAMUNDA_REST_ADDRESS, c -> c.getRestApiAddress().toString());
+
+        if (test) {
+            config.put(PROP_TEST_GATEWAY_ADDRESS, c -> c.getExternalGrpcApiAddress().toString());
+            config.put(PROP_TEST_REST_ADDRESS, c -> c.getExternalRestApiAddress().toString());
+            config.put(PROP_TEST_MONITORING_ADDRESS, c -> c.getMonitoringApiAddress().toString());
+        }
+        return config;
     }
 
     private static Map<String, String> configMap(URI grpcApiUri, URI restApiUri,
@@ -220,63 +159,11 @@ public class CamundaDevServiceProcessor {
         config.put(PROP_CAMUNDA_REST_ADDRESS, restApiUri.toString());
 
         if (test) {
-            config.put("quarkiverse.camunda.devservices.test.gateway-address", externalGrpcApiUri.toString());
-            config.put("quarkiverse.camunda.devservices.test.rest-address", externalRestApiUri.toString());
-            config.put("quarkiverse.camunda.devservices.test.monitoring-address", externalMonitoringApiUri.toString());
+            config.put(PROP_TEST_GATEWAY_ADDRESS, externalGrpcApiUri.toString());
+            config.put(PROP_TEST_REST_ADDRESS, externalRestApiUri.toString());
+            config.put(PROP_TEST_MONITORING_ADDRESS, externalMonitoringApiUri.toString());
         }
         return config;
-    }
-
-    private void shutdownCamunda() {
-        if (devService != null) {
-            try {
-                devService.close();
-            } catch (Throwable e) {
-                log.error("Failed to stop Camunda", e);
-            } finally {
-                devService = null;
-            }
-        }
-    }
-
-    private CamundaDevServiceCfg getConfiguration(CamundaDevServiceBuildTimeConfig cfg) {
-        CamundaDevServicesConfig camundaDevServicesConfig = cfg.devService();
-        return new CamundaDevServiceCfg(camundaDevServicesConfig);
-    }
-
-    private static final class CamundaDevServiceCfg {
-        private final boolean devServicesEnabled;
-        private final String imageName;
-        private final boolean shared;
-        private final String serviceName;
-        private final boolean reuse;
-        private final CamundaDevServiceLogLevel logLevel;
-
-        public CamundaDevServiceCfg(CamundaDevServicesConfig config) {
-            this.devServicesEnabled = config.enabled();
-            this.imageName = config.imageName().orElse(null);
-            this.shared = config.shared();
-            this.serviceName = config.serviceName();
-            this.reuse = config.reuse();
-            this.logLevel = new CamundaDevServiceLogLevel(config.log());
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            CamundaDevServiceCfg that = (CamundaDevServiceCfg) o;
-            return devServicesEnabled == that.devServicesEnabled && Objects.equals(imageName, that.imageName);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(devServicesEnabled, imageName);
-        }
     }
 
     public static final class CamundaDevServiceLogLevel {

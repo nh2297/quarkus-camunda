@@ -1,4 +1,8 @@
 === Upgrade
+==== Version >=3.0.0
+- Migrated to new Dev Services api provided by Quarkus
+- Camunda 8.10 client support
+- Minimum required quarkus version is >= 3.25
 
 ==== Version >=2.0.0
 - Renamed the project from `quarkus zeebe` to `quarkus camunda` to reflect the migration to  the new camunda client.
