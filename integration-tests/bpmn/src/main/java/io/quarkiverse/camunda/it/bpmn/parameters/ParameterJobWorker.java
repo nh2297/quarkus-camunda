@@ -7,20 +7,19 @@ import java.util.Map;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import io.camunda.client.api.response.ActivatedJob;
 import io.camunda.client.api.worker.JobClient;
 import io.quarkiverse.camunda.*;
 import io.quarkus.logging.Log;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.json.JsonMapper;
 
 @ApplicationScoped
 public class ParameterJobWorker {
 
     @Inject
-    ObjectMapper mapper;
+    JsonMapper mapper;
 
     @JobWorker(type = "test-default")
     public void testDefault(ActivatedJob job, JobClient client) {
@@ -76,7 +75,7 @@ public class ParameterJobWorker {
         String tmp;
         try {
             tmp = mapper.writeValueAsString(param);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new RuntimeException(e);
         }
         Log.infof("Test variableAs value: %s return string %s", param, tmp);
@@ -88,7 +87,7 @@ public class ParameterJobWorker {
         byte[] tmp;
         try {
             tmp = mapper.writeValueAsBytes(param);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new RuntimeException(e);
         }
         Log.infof("Test variableAs value: %s return input-stream", param);
