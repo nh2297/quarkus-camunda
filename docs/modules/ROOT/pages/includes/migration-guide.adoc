@@ -1,4 +1,10 @@
 === Upgrade
+==== Version >=4.0.0
+- Requires Quarkus 4 and Java 21.
+- Quarkus now provides a Jackson 3 `tools.jackson.databind.json.JsonMapper` bean instead of a Jackson 2 `ObjectMapper`. Inject `JsonMapper` if you used the Quarkus mapper in your job workers.
+- The Camunda client still uses Jackson 2 (`com.fasterxml.jackson`); its default `JsonMapper` is unaffected. Only if you provide your own `io.camunda.client.api.JsonMapper` bean: the Quarkus Jackson 2 `ObjectMapper` bean is gone, so create the `ObjectMapper` yourself (e.g. `new CamundaObjectMapper(objectMapper)`), and add Jackson 2 modules like `jackson-datatype-jsr310` as dependencies, since Quarkus no longer brings them transitively.
+- Quarkus OpenTelemetry now exports via `http/protobuf` on port `4318` by default and samples 10% of traces outside dev mode.
+
 ==== Version >=3.0.0
 - Migrated to new Dev Services api provided by Quarkus
 - Camunda 8.10 client support

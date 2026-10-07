@@ -1,11 +1,12 @@
 package io.quarkiverse.camunda;
 
+import jakarta.annotation.Priority;
 import jakarta.enterprise.inject.Produces;
+import jakarta.enterprise.inject.Reserve;
 import jakarta.inject.Singleton;
 
 import io.camunda.client.api.JsonMapper;
 import io.camunda.client.impl.CamundaObjectMapper;
-import io.quarkus.arc.DefaultBean;
 import io.quarkus.arc.Unremovable;
 import io.smallrye.mutiny.infrastructure.Infrastructure;
 
@@ -15,7 +16,8 @@ public class ResourcesProducer {
     @Produces
     @Singleton
     @Unremovable
-    @DefaultBean
+    @Reserve
+    @Priority(0)
     public JsonMapper defaultJsonMapper() {
         return new CamundaObjectMapper();
     }
@@ -23,7 +25,8 @@ public class ResourcesProducer {
     @Produces
     @Singleton
     @Unremovable
-    @DefaultBean
+    @Reserve
+    @Priority(0)
     public ScheduledExecutorService defaultZeebeScheduledExecutorService() {
         return Infrastructure::getDefaultWorkerPool;
     }
