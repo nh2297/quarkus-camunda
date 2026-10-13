@@ -21,7 +21,7 @@ public class TestResources implements QuarkusTestResourceLifecycleManager {
     GenericContainer<?> jaeger = new GenericContainer<>("jaegertracing/all-in-one:1.58")
             .waitingFor(new BoundPortHttpWaitStrategy(16686))
             .withEnv("COLLECTOR_OTLP_ENABLED", "true")
-            .withExposedPorts(16686, 4317);
+            .withExposedPorts(16686, 4318);
 
     @Override
     public Map<String, String> start() {
@@ -31,7 +31,7 @@ public class TestResources implements QuarkusTestResourceLifecycleManager {
         JAEGER_PORT = jaeger.getMappedPort(16686);
         log.info("JAEGER_HOST: {}, JAEGER_PORT: {}", JAEGER_HOST, JAEGER_PORT);
         return Map.of("quarkus.otel.exporter.otlp.traces.endpoint",
-                String.format("http://%s:%s", jaeger.getHost(), jaeger.getMappedPort(4317)));
+                String.format("http://%s:%s", jaeger.getHost(), jaeger.getMappedPort(4318)));
     }
 
     @Override

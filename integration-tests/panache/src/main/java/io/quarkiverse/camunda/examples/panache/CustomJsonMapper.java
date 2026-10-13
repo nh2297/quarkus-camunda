@@ -1,29 +1,20 @@
 package io.quarkiverse.camunda.examples.panache;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
 
 import jakarta.enterprise.context.ApplicationScoped;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-
 import io.camunda.client.api.JsonMapper;
 import io.camunda.client.api.command.InternalClientException;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.cfg.DateTimeFeature;
 
 @ApplicationScoped
 public class CustomJsonMapper implements JsonMapper {
-
-    public static final ObjectMapper MAPPER = new ObjectMapper();
-    static {
-        MAPPER.registerModule(new JavaTimeModule());
-        MAPPER.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
-    }
 
     private static final TypeReference<Map<String, Object>> MAP_TYPE_REFERENCE = new TypeReference<Map<String, Object>>() {
     };
@@ -34,17 +25,17 @@ public class CustomJsonMapper implements JsonMapper {
     private final ObjectMapper objectMapper;
 
     public CustomJsonMapper() {
-        this.objectMapper = new ObjectMapper();
-        this.objectMapper.registerModule(new JavaTimeModule());
-        this.objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
-        this.objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        this.objectMapper = tools.jackson.databind.json.JsonMapper.builder()
+                .disable(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS)
+                .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                .build();
     }
 
     @Override
     public <T> T fromJson(final String json, final Class<T> typeClass) {
         try {
             return objectMapper.readValue(json, typeClass);
-        } catch (final IOException e) {
+        } catch (final JacksonException e) {
             throw new InternalClientException(
                     String.format("Failed to deserialize json '%s' to class '%s'", json, typeClass), e);
         }
@@ -54,7 +45,7 @@ public class CustomJsonMapper implements JsonMapper {
     public Map<String, Object> fromJsonAsMap(final String json) {
         try {
             return objectMapper.readValue(json, MAP_TYPE_REFERENCE);
-        } catch (final IOException e) {
+        } catch (final JacksonException e) {
             throw new InternalClientException(
                     String.format("Failed to deserialize json '%s' to 'Map<String, Object>'", json), e);
         }
@@ -64,7 +55,7 @@ public class CustomJsonMapper implements JsonMapper {
     public Map<String, String> fromJsonAsStringMap(final String json) {
         try {
             return objectMapper.readValue(json, STRING_MAP_TYPE_REFERENCE);
-        } catch (final IOException e) {
+        } catch (final JacksonException e) {
             throw new InternalClientException(
                     String.format("Failed to deserialize json '%s' to 'Map<String, String>'", json), e);
         }
@@ -74,7 +65,7 @@ public class CustomJsonMapper implements JsonMapper {
     public String toJson(final Object value) {
         try {
             return objectMapper.writeValueAsString(value);
-        } catch (final JsonProcessingException e) {
+        } catch (final JacksonException e) {
             throw new InternalClientException(
                     String.format("Failed to serialize object '%s' to json", value), e);
         }
@@ -84,7 +75,7 @@ public class CustomJsonMapper implements JsonMapper {
     public String validateJson(final String propertyName, final String jsonInput) {
         try {
             return objectMapper.readTree(jsonInput).toString();
-        } catch (final IOException e) {
+        } catch (final JacksonException e) {
             throw new InternalClientException(
                     String.format(
                             "Failed to validate json input '%s' for property '%s'", jsonInput, propertyName),
@@ -96,7 +87,7 @@ public class CustomJsonMapper implements JsonMapper {
     public String validateJson(final String propertyName, final InputStream jsonInput) {
         try {
             return objectMapper.readTree(jsonInput).toString();
-        } catch (final IOException e) {
+        } catch (final JacksonException e) {
             throw new InternalClientException(
                     String.format("Failed to validate json input stream for property '%s'", propertyName), e);
         }

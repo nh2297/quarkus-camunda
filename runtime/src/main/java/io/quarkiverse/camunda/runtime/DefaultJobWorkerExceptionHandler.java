@@ -4,6 +4,8 @@ import static java.util.Map.entry;
 
 import java.util.Map;
 
+import jakarta.annotation.Priority;
+import jakarta.enterprise.inject.Reserve;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
@@ -13,12 +15,12 @@ import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.quarkiverse.camunda.JobWorkerExceptionHandler;
 import io.quarkiverse.camunda.ScheduledExecutorService;
-import io.quarkus.arc.DefaultBean;
 import io.quarkus.arc.Unremovable;
 
 @Singleton
 @Unremovable
-@DefaultBean
+@Reserve
+@Priority(0)
 public class DefaultJobWorkerExceptionHandler implements JobWorkerExceptionHandler {
 
     private static final Logger LOG = Logger.getLogger(JobWorkerHandler.class);
